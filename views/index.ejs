@@ -1,0 +1,17 @@
+<%- include("partials/header.ejs") %>
+    <div class="container flex">
+        <div class="grid-wrapper">
+            <div class="head">All Tasks:</div>
+            <% if (locals.allToDo && allToDo.length > 0) { %>
+                <% for (let i = 0; i < allToDo.length; i++) { %>
+                    <form method="post" action="/delete">
+                        <input type="checkbox" id="myCheckox" value="<%=allToDo[i]._id%>">
+                        <button class="grid-item" type="submit" id="myButton"><%= allToDo[i].name %></button>
+                    </form>
+                <% } %>
+            <% } else { %>
+                <div class="grid-item">No tasks added!</div>
+            <% } %>
+        </div>
+    </div>
+<%- include("partials/footer.ejs") %>

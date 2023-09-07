@@ -1,0 +1,16 @@
+<%- include("partials/header.ejs") %>
+    <div class="container flex">
+        <div class="grid-wrapper">
+            <div class="head">Additional Tasks:</div>
+            <% if (locals.additionalToDo && additionalToDo.length > 0) { %>
+                <% for (let i = 0; i < additionalToDo.length; i++) { %>
+                    <div class="grid-item">
+                        <%= additionalToDo[i].name %>
+                    </div>
+                <% } %>
+            <% } else { %>
+                <div class="grid-item">No tasks added!</div>
+            <% } %>
+        </div>
+    </div>
+<%- include("partials/footer.ejs") %>
