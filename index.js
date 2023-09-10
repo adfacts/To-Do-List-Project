@@ -39,7 +39,6 @@ const item3 = new AllToDo({
 
 
 
-
 //reading data
 async function read(collection) {
     try {
@@ -91,7 +90,6 @@ async function savingData(collection, toDo) {
 // To check if initial data exists.
 
 
-
 app.get("/", async (req, res) => {
     await initialCheckAndSave();
     const allToDo = await read(AllToDo);
@@ -109,9 +107,29 @@ app.post("/", async (req, res) => {
 });
 
 app.post("/delete", async (req, res) => {
-    console.log("done");
-    console.log(req.body);
-
+    const id = req.body.checkbox;
+    const referringURL = new URL(req.get("referer")).pathname;
+    console.log(referringURL);
+    if (typeof id !== "undefined") {
+        if (referringURL === "/") {
+            await AllToDo.findByIdAndDelete(id);
+            res.redirect("/");
+        } else if (referringURL === "/work") {
+            await WorkToDo.findByIdAndDelete(id);
+            // await AllToDo.findByIdAndDelete(id);
+            res.redirect("/work");
+        } else if (referringURL === "/home") {
+            await HomeToDo.findByIdAndDelete(id);
+            // await AllToDo.findByIdAndDelete(id);
+            res.redirect("/home");
+        } else if (referringURL === "/additional") {
+            await AdditionalToDo.findByIdAndDelete(id);
+            // await AllToDo.findByIdAndDelete(id);
+            res.redirect("/additional");
+        }
+    } else {
+        res.redirect(referringURL);
+    }
 });
 
 app.get("/work", async (req, res) => {
