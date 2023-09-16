@@ -3,7 +3,9 @@ Simple To-Do web app with database
 
 Note: The Project is under development.
 
+# Requirements
+1. node.js
+2. mongoDB
 # To start: 
-1. npm init
-2. npm i
-3. node index.js
+1. npm i
+2. node index.js
