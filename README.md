@@ -1,4 +1,9 @@
 # To-Do-List-Project
 Simple To-Do web app with database
 
-Note: The Project is under development and the deleting to-do feature is yet to be implemented.
+Note: The Project is under development.
+
+# To start: 
+1. npm init
+2. npm i
+3. node index.js
