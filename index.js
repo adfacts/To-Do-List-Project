@@ -20,10 +20,14 @@ const itemsSchema = new mongoose.Schema ({
     name: String
 });
 
+const listSchema = new mongoose.Schema({
+    name: String,
+    items: [itemsSchema]
+});
+
 const AllToDo = mongoose.model("AllToDo", itemsSchema);
-const WorkToDo = mongoose.model("WorkToDo", itemsSchema);
-const HomeToDo = mongoose.model("HomeToDo", itemsSchema);
-const AdditionalToDo = mongoose.model("AdditionalToDo", itemsSchema);
+const List = mongoose.model("List", listSchema);
+
 
 const item1 = new AllToDo({
     name: "Welcome to todo list app!"
@@ -34,17 +38,15 @@ const item2 = new AllToDo({
 });
 
 const item3 = new AllToDo({
-    name: "Click to the todo to cancel it out."
+    name: "Tick the checkbox and then click on the todo to delete it."
 });
 
 
-
+// TODO: To be used for all reading operations.
 //reading data
 async function read(collection) {
     try {
         const toDos = await collection.find();
-        console.log("Data read successfully.");
-        // console.log(toDos);
         return toDos
     } catch (err) {
         console.log(err);
@@ -57,7 +59,6 @@ async function initialCheckAndSave() {
     if (result.length === 0) {
         try {
             await AllToDo.insertMany([item1, item2, item3]);
-            console.log("Saved to the database.");
         } catch (err) {
             console.log(err);
         }
@@ -65,7 +66,8 @@ async function initialCheckAndSave() {
         console.log("Initial Data exists.");
     }
 }
-    
+
+// TODO: To be used for all saving operations.
 async function savingData(collection, toDo) {
     const newToDo = new collection({
         name: toDo
@@ -79,99 +81,100 @@ async function savingData(collection, toDo) {
     }
 }
 
-// let allToDo = [];
-
-// let workToDo = [];
-
-// let homeToDo = [];
-
-// let additionalToDo = [];
-
-// To check if initial data exists.
-
 
 app.get("/", async (req, res) => {
     await initialCheckAndSave();
     const allToDo = await read(AllToDo);
     const url = '/';
-    res.render("index.ejs", { allToDo, action: url });
+    res.render("index.ejs", {listTitle: "All Tasks", allToDo, action: url, customLists: await List.find() });
 });
 
 
 app.post("/", async (req, res) => {
-    // extra add the feature to tell if the input is invalid or empty.
     await savingData(AllToDo, req.body["newToDo"]);
     const allToDo = await read(AllToDo);
     const url = '/';
-    res.render("index.ejs", { allToDo, action: url });
+    res.render("index.ejs", {listTitle: "All Tasks", allToDo, action: url, customLists: await List.find() });
 });
 
 app.post("/delete", async (req, res) => {
     const id = req.body.checkbox;
+    console.log("id: ",id);
+    const customListName = req.body["customListName"];
+    console.log("customListName: ", customListName);
     const referringURL = new URL(req.get("referer")).pathname;
-    console.log(referringURL);
+    console.log("referringURL: ", referringURL);
     if (typeof id !== "undefined") {
         if (referringURL === "/") {
             await AllToDo.findByIdAndDelete(id);
             res.redirect("/");
-        } else if (referringURL === "/work") {
-            await WorkToDo.findByIdAndDelete(id);
-            // await AllToDo.findByIdAndDelete(id);
-            res.redirect("/work");
-        } else if (referringURL === "/home") {
-            await HomeToDo.findByIdAndDelete(id);
-            // await AllToDo.findByIdAndDelete(id);
-            res.redirect("/home");
-        } else if (referringURL === "/additional") {
-            await AdditionalToDo.findByIdAndDelete(id);
-            // await AllToDo.findByIdAndDelete(id);
-            res.redirect("/additional");
+        } else {
+            const foundList = await List.findOne({ name: customListName });
+            let indexToDelete = 0;
+            for (let i = 0; i < foundList.items.length; i++) {
+                if (foundList.items[i]._id === id) {
+                    indexToDelete = i
+                    break;
+                }
+            }
+            console.log("indexToDelete: ", indexToDelete);
+            foundList.items.splice(indexToDelete, 1);
+            await foundList.save();
+            await AllToDo.findByIdAndDelete(id);
+            res.redirect(referringURL);
         }
     } else {
         res.redirect(referringURL);
     }
 });
 
-app.get("/work", async (req, res) => {
-    const workToDo = await read(WorkToDo);
-    const url = '/work';
-    res.render("work.ejs", { workToDo, action: url });
+// to handle favicon.ico stuff.
+app.get("/favicon.ico", (req, res) => {
+    res.status(204).end();
 });
 
-app.post("/work", async (req, res) => {
-    await savingData(WorkToDo, req.body["newToDo"]);
-    await savingData(AllToDo, req.body["newToDo"]);
-    const workToDo = await read(WorkToDo);
-    const url = '/work';
-    res.render("work.ejs", { workToDo, action: url });
+
+// to handle custom lists
+app.get("/:customListName", async (req, res) => {
+    
+    const customListName = req.params.customListName;
+    const url = "/addToList";
+    const existingList = await List.findOne({ name: customListName });
+    res.render("index.ejs", { listTitle: customListName, allToDo: existingList.items, action: url, customLists: await List.find() });
 });
 
-app.get("/home", async (req, res) => {
-    const homeToDo = await read(HomeToDo);
-    const url = "/home";
-    res.render("home.ejs", { homeToDo, action: url });
+app.post("/createList", async (req, res) => {
+    const customListName = req.body["customListName"];
+    const url = "/addToList";
+    const existingList = await List.findOne({ name: customListName });
+    if (!existingList) {
+        console.log("Doesn't exist!");
+        const list = new List({
+            name: customListName,
+            items: []
+        });
+        await list.save();
+        res.render("index.ejs", { listTitle: customListName, allToDo: list.items, action: url, customLists: await List.find() });
+    } else {
+        console.log("Exists!");
+        res.render("index.ejs", { listTitle: customListName, allToDo: existingList.items, action: url, customLists: await List.find() });
+    }
 });
 
-app.post("/home", async (req, res) => {
-    await savingData(HomeToDo, req.body["newToDo"]);
-    await savingData(AllToDo, req.body["newToDo"]);
-    const homeToDo = await read(HomeToDo);
-    const url = "/home";
-    res.render("home.ejs", { homeToDo, action: url });
-});
+app.post("/addToList", async (req, res) => {
+    const customListName = req.body["customListName"];
+    const url = "/addToList";
 
-app.get("/additional", async (req, res) => {
-    const additionalToDo = await read(AdditionalToDo);
-    const url = "/additional";
-    res.render("additional.ejs", { additionalToDo, action: url });
-});
+    const existingList = await List.findOne({ name: customListName });
 
-app.post("/additional", async (req, res) => {
-    await savingData(AdditionalToDo, req.body["newToDo"]);
-    await savingData(AllToDo, req.body["newToDo"]);
-    const additionalToDo = await read(additionalToDo);
-    const url = "/additional";
-    res.render("additional.ejs", { additionalToDo, action: url });
+    const item = new AllToDo({
+        name: req.body["newToDo"]
+    });
+    
+    existingList.items.push(item);
+    await existingList.save();
+    await item.save();
+    res.redirect("/" + customListName);
 });
 
 app.listen(port, () => {

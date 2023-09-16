@@ -41,7 +41,6 @@ strong {
     text-align: center;
     color: white;
     border-radius: 30px;
-    /* margin-bottom: 100px; */
     margin-top: 50px;
     font-size: xx-large;
 }
@@ -57,11 +56,15 @@ strong {
     font-size: x-large;
     margin-left: 70px;
     margin-top: 20px;
-    /* margin-bottom: 40px; */
 }
 
 .cross-fade {
     text-decoration: line-through;
     text-decoration-color: red;
     opacity: 0.5;
+}
+
+.task-box {
+    margin-left: 75%;
+    margin-bottom: 50px;
 }
