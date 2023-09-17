@@ -1,6 +1,7 @@
 import express from "express";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
+import _ from "lodash";
 
 const app = express();
 const port = 3000;
@@ -109,17 +110,7 @@ app.post("/delete", async (req, res) => {
             await AllToDo.findByIdAndDelete(id);
             res.redirect("/");
         } else {
-            const foundList = await List.findOne({ name: customListName });
-            let indexToDelete = 0;
-            for (let i = 0; i < foundList.items.length; i++) {
-                if (foundList.items[i]._id === id) {
-                    indexToDelete = i
-                    break;
-                }
-            }
-            console.log("indexToDelete: ", indexToDelete);
-            foundList.items.splice(indexToDelete, 1);
-            await foundList.save();
+            await List.findOneAndUpdate({ name: customListName }, { $pull: { items: { _id: id } } });
             await AllToDo.findByIdAndDelete(id);
             res.redirect(referringURL);
         }
@@ -144,7 +135,7 @@ app.get("/:customListName", async (req, res) => {
 });
 
 app.post("/createList", async (req, res) => {
-    const customListName = req.body["customListName"];
+    const customListName = _.capitalize(req.body["customListName"]);
     const url = "/addToList";
     const existingList = await List.findOne({ name: customListName });
     if (!existingList) {
@@ -157,7 +148,7 @@ app.post("/createList", async (req, res) => {
         res.render("index.ejs", { listTitle: customListName, allToDo: list.items, action: url, customLists: await List.find() });
     } else {
         console.log("Exists!");
-        res.render("index.ejs", { listTitle: customListName, allToDo: existingList.items, action: url, customLists: await List.find() });
+        res.redirect("/" + customListName);
     }
 });
 
