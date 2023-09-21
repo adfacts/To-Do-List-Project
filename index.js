@@ -11,7 +11,7 @@ app.use(express.static("public"));
 
 // connecting
 try {
-    await mongoose.connect("mongodb://127.0.0.1:27017/todolistDB", { useNewUrlParser: true });
+    await mongoose.connect("mongodb+srv://admin-aman:Test123@cluster0.tmicwtn.mongodb.net/todolistDB", { useNewUrlParser: true });
     console.log("Successfully connected to database");
 } catch (err) {
     console.log(err);
